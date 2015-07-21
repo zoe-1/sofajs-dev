@@ -1,0 +1,21 @@
+{
+  "name": "nano-dev",
+  "version": "0.0.1",
+  "description": "Test nano abilities",
+  "main": "index.js",
+  "dependencies": {
+    "nano": "^6.1.4"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "start": "node index.js",
+    "test": "test"
+  },
+  "keywords": [
+    "nano",
+    "couchdb",
+    "sample"
+  ],
+  "author": "Jon Swenson",
+  "license": "BSD-3"
+}

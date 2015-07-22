@@ -4,12 +4,16 @@
   "description": "Test nano abilities",
   "main": "index.js",
   "dependencies": {
-    "nano": "^6.1.4"
+    "nano": "6.x.x"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "code": "1.x.x",
+    "lab": "5.x.x"
+  },
   "scripts": {
-    "start": "node index.js",
-    "test": "test"
+    "start": "node ./lib/user.js",
+    "test": "node node_modules/lab/bin/lab -a code -t 100 -L -v",
+    "test-cov-html": "node node_modules/lab/bin/lab -a code -r html -o coverage.html"
   },
   "keywords": [
     "nano",

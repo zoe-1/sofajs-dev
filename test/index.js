@@ -19,21 +19,21 @@ var it = lab.test;
 
 
 
-describe('start couchdb', function() {
+describe('start couchdb', function () {
 
     /*
     it('register user', function (done) {
-    
+
         var sessionCookie = DB.session();
         expect(sessionCookie).to.have.length(38);;
         done();
     });
 
     it('register user', function (done) {
-    
+
         var orig = Nano.auth;
         Nano.auth = function () {
-        
+
             return next(new Error('register version failed'));
         };
 

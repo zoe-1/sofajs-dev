@@ -4,6 +4,7 @@
   "description": "Test nano abilities",
   "main": "index.js",
   "dependencies": {
+    "bluebird": "^2.9.34",
     "nano": "6.x.x"
   },
   "devDependencies": {

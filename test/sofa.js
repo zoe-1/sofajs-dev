@@ -18,17 +18,18 @@ var describe = lab.experiment;
 var expect = Code.expect;
 var it = lab.test;
 
+describe('pre-test cleanup', function () {
 
-describe('couchdb', function () {
+    it('connect as root', function (done) {
 
-    it('authenticate and connect', function (done) {
+        // Make connect as root
 
         Async.waterfall([
             function (next) {
 
                 // Make connection to db.
 
-                Sofa.connect(function (sessionid) {
+                Sofa.connect(function (err, sessionid) {
 
                     expect(sessionid).to.have.length(50);
                     next();
@@ -40,14 +41,65 @@ describe('couchdb', function () {
 
                 expect(Sofa.sessionid).to.have.length(50);
                 next();
-            }], function (err) {
+            },
+            function (next) {
+
+                // Try to connect after connection established.
+
+                Sofa.connect(function (err) {
+
+                    expect(err).to.equal('already connected.');
+                    next();
+                });
+            }
+            ], function (err) {
+
+                // expect(err).to.equal('Error: Name or password is incorrect');
+                done(Sofa.stop());
+            });
+    });
+});
+
+describe('initiate session', function () {
+
+    it('success authentication and connect', function (done) {
+
+        Async.waterfall([
+            function (next) {
+
+                // Make connection to db.
+
+                Sofa.connect(function (err, sessionid) {
+
+                    expect(sessionid).to.have.length(50);
+                    next();
+                });
+            },
+            function (next) {
+
+                // Ensure db sessionid was set.
+
+                expect(Sofa.sessionid).to.have.length(50);
+                next();
+            },
+            function (next) {
+
+                // Try to connect after connection established.
+
+                Sofa.connect(function (err) {
+
+                    expect(err).to.equal('already connected.');
+                    next();
+                });
+            }
+            ], function (err) {
 
                 // expect(err).to.equal('Error: Name or password is incorrect');
                 done(Sofa.stop());
             });
     });
 
-    it('authentication fails', function (done) {
+    it('fail bad authentication credentials', function (done) {
 
         // Set bad pw
 
@@ -58,9 +110,9 @@ describe('couchdb', function () {
 
                 // Make connection to db.
 
-                Sofa.connect(function (errormessage) {
+                Sofa.connect(function (err) {
 
-                    expect(errormessage).to.equal('Name or password is incorrect.');
+                    expect(err).to.equal('Name or password is incorrect.');
                     next();
                 });
             },
@@ -78,14 +130,14 @@ describe('couchdb', function () {
             });
     });
 
-    it('get current session details', function (done) {
+    it('success get current session details', function (done) {
 
         Async.waterfall([
             function (next) {
 
                 // Make connection to db.
 
-                Sofa.connect(function (sessionid) {
+                Sofa.connect(function (err, sessionid) {
 
                     expect(sessionid).to.have.length(50);
                     next();
@@ -114,14 +166,14 @@ describe('couchdb', function () {
             });
     });
 
-    it('fail to get session details', function (done) {
+    it('fail to get current session data', function (done) {
 
         Async.waterfall([
             function (next) {
 
                 // Make connection to db.
 
-                Sofa.connect(function (sessionid) {
+                Sofa.connect(function (err, sessionid) {
 
                     expect(sessionid).to.have.length(50);
                     next();
@@ -151,15 +203,19 @@ describe('couchdb', function () {
                 done(Sofa.stop());
             });
     });
+});
 
-    it('Add new document', function (done) {
+
+describe('insert documents', function () {
+
+    it('success insert document with previous DB connection', function (done) {
 
         Async.waterfall([
             function (next) {
 
                 // Make connection to db.
 
-                Sofa.connect(function (sessionid) {
+                Sofa.connect(function (err, sessionid) {
 
                     expect(sessionid).to.have.length(50);
                     next();
@@ -181,6 +237,84 @@ describe('couchdb', function () {
                     // console.log('after insert: ', response);
                     expect(response.ok).to.equal(true);
                     expect(response.id).to.have.length(32);
+                    next();
+                });
+            }], function (err) {
+
+                // expect(err).to.equal('Error: Name or password is incorrect');
+                done(Sofa.stop());
+            });
+    });
+
+    it('fail insert with previous DB connection', function (done) {
+
+        Async.waterfall([
+            function (next) {
+
+                // Make connection to db.
+
+                Sofa.connect(function (err, sessionid) {
+
+                    expect(sessionid).to.have.length(50);
+                    next();
+                });
+            },
+            function (next) {
+
+                // Ensure db sessionid was set.
+
+                expect(Sofa.sessionid).to.have.length(50);
+                next();
+            },
+            function (next) {
+
+                Sofa.sessionid = 'badsessionid';
+
+                // Insert Document to DB.
+
+                Sofa.insert({ name: 'sofa doc test', body: 'more docs' }, function (err, response) {
+
+                    // console.log('after insert: ', response);
+                    expect(err.message).to.equal('Malformed AuthSession cookie. Please clear your cookies.');
+                    next();
+                });
+            }], function (err) {
+
+                // expect(err).to.equal('Error: Name or password is incorrect');
+                done(Sofa.stop());
+            });
+    });
+
+    it('successfully insert document no previous DB connection', function (done) {
+
+        Async.waterfall([
+            function (next) {
+
+                Sofa.insert({ name: 'sofa doc test', body: 'more docs' }, function (err, response) {
+
+                    // Successful insert document response.
+
+                    expect(response.ok).to.equal(true);
+                    expect(response.id).to.have.length(32);
+                    next();
+                });
+            }], function (err) {
+
+                // expect(err).to.equal('Error: Name or password is incorrect');
+                done(Sofa.stop());
+            });
+    });
+
+    it('fail insert document no previous DB connection', function (done) {
+
+        Async.waterfall([
+            function (next) {
+
+                Sofa.insert('bad data submitted', function (err, response) {
+
+                    // Successful insert document response.
+
+                    expect(err.error).to.equal('bad_request');
                     next();
                 });
             }], function (err) {

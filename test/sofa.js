@@ -20,7 +20,7 @@ var it = lab.test;
 
 describe('pre-test cleanup', function () {
 
-    it('connect as root', function (done) {
+    it('connect as root, destroy old DB, create new DB', function (done) {
 
         // Make connect as root
 
@@ -40,21 +40,212 @@ describe('pre-test cleanup', function () {
                 // Ensure db sessionid was set.
 
                 expect(Sofa.sessionid).to.have.length(50);
-                next();
-            },
-            function (next) {
 
                 // Try to connect after connection established.
 
                 Sofa.connect(function (err) {
 
                     expect(err).to.equal('already connected.');
+
+                    next();
+                });
+            },
+            function (next) {
+
+                // Destroy old database
+
+                Sofa.destroy(function (err, response) {
+
+                    // console.log('------');
+                    expect(err).to.exist();
+                    //expect(response).to.equal('destroyed db');
+                    // console.log(response);
+                    next();
+                });
+            },
+            function (next) {
+
+                // Create new database
+
+                Sofa.create(function (err, response) {
+
+                    // console.log('create entered' + response);
+                    expect(response.ok).to.equal(true);
+                    next();
+                });
+            },
+            function (next) {
+
+                // Fail to create new database  Coverage play.
+
+                Config.db = null;
+
+                Sofa.create(function (err, response) {
+
+                    expect(err).to.exist();
+                    Config.db = 'sofajs';
                     next();
                 });
             }
             ], function (err) {
 
                 // expect(err).to.equal('Error: Name or password is incorrect');
+                done(Sofa.stop());
+            });
+    });
+
+    it('create db without previous session created', function (done) {
+
+        Async.waterfall([
+            function (next) {
+
+                // Make connection to db.
+
+                Sofa.connect(function (err, sessionid) {
+
+                    expect(sessionid).to.have.length(50);
+                    next();
+                });
+            },
+            function (next) {
+
+                // Ensure db sessionid was set.
+
+                expect(Sofa.sessionid).to.have.length(50);
+
+                // Try to connect after connection established.
+
+                Sofa.connect(function (err) {
+
+                    expect(err).to.equal('already connected.');
+
+                    next();
+                });
+            },
+            function (next) {
+
+                // If db exists destroy it.
+                // Destroy old database. This passes even if it does not exist.
+
+                Sofa.destroy(function (err, response) {
+
+                    // console.log('------');
+                    expect(response).to.equal('destroyed db');
+                    // console.log(response);
+
+                    // Stop here to get coverage.
+                    // If stopped, no sessionid exists and new connection created.
+                    Sofa.stop();
+                    next();
+                });
+            },
+            function (next) {
+
+                // create DB with no pre-existing session
+
+                Sofa.create(function (err, response) {
+
+                    // console.log('create entered' + response);
+                    expect(response.ok).to.equal(true);
+                    Sofa.stop();
+                    next();
+                });
+            },
+            function (next) {
+
+                // Fail to create db with no session previously existing  Coverage play.
+
+                Sofa.create(function (err, response) {
+
+                    expect(err).to.exist();
+                    next();
+                });
+            }
+            ], function (err) {
+
+                done(Sofa.stop());
+            });
+    });
+
+});
+
+describe('destroy databases', function () {
+
+    it('destroy database when no pre-existing session created.', function (done) {
+
+        Async.waterfall([
+            function (next) {
+
+                // Get coverage
+
+                Sofa.destroy(function (err, response) {
+
+                    expect(response).to.equal('destroyed db');
+                    next();
+                });
+            }, function (next) {
+
+                // Remake DB because future tests assume it exits.
+
+                Sofa.create(function (err, response) {
+
+                    // expect(err).to.exist();
+                    expect(response.ok).to.equal(true);
+                    next();
+                });
+            }], function (err) {
+
+                done(Sofa.stop());
+            });
+    });
+
+    it('failed to destroy database', function (done) {
+
+        // No session id previously exists when making DB.
+
+        Config.db = null;
+        Sofa.destroy(function (err, response) {
+
+            Config.db = 'sofajs';
+
+            // console.log('destroy err here: ' + err.message + response);
+
+            expect(err.message).to.equal('Only GET,HEAD allowed');
+            done(Sofa.stop());
+        });
+    });
+
+    it('failed to destroy database with session existing', function (done) {
+
+        // No session id previously exists when making DB.
+
+        Async.waterfall([
+            function (next) {
+
+                // Make connection to db.
+
+                Sofa.connect(function (err, sessionid) {
+
+                    expect(sessionid).to.have.length(50);
+                    next();
+                });
+            }, function (next) {
+
+                Config.db = null;
+
+                // fail to destroy existing DB get coverage.
+                Sofa.destroy(function (err, response) {
+
+                    Config.db = 'sofajs';
+                    expect(err.message).to.equal('Only GET,HEAD allowed');
+
+                    // console.log('err here: ' + err + response);
+                    // expect(err).to.exist();
+                    next();
+                });
+            }
+            ], function (err) {
+
                 done(Sofa.stop());
             });
     });
@@ -165,6 +356,7 @@ describe('initiate session', function () {
                 done(Sofa.stop());
             });
     });
+
 
     it('fail to get current session data', function (done) {
 

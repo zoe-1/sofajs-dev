@@ -4,7 +4,9 @@
   "description": "Test nano abilities",
   "main": "index.js",
   "dependencies": {
+    "bcrypt": "^0.8.4",
     "bluebird": "^2.9.34",
+    "joi": "^6.6.1",
     "nano": "6.x.x"
   },
   "devDependencies": {
@@ -14,6 +16,8 @@
   "scripts": {
     "start": "node ./lib/sofa.js",
     "test": "node node_modules/lab/bin/lab -a code -t 100 -L -v",
+    "user": "node node_modules/lab/bin/lab -a code -t 100 -L -v test/user.js",
+    "salt": "node lib/config/ser.js",
     "test-cov-html": "node node_modules/lab/bin/lab -a code -r html -o coverage.html"
   },
   "keywords": [

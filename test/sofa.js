@@ -5,6 +5,8 @@ var Path = require('path');
 var Async = require('async');
 var Sofa = require('../lib/sofa');
 var Promise = require('bluebird');
+var Fixtures = require('./fixtures/fixtures1');
+var Nano = require('nano')('http://localhost:5984');
 
 // Declare internals
 
@@ -93,6 +95,7 @@ describe('pre-test cleanup', function () {
                 done(Sofa.stop());
             });
     });
+
 
     it('create db without previous session created', function (done) {
 
@@ -389,6 +392,68 @@ describe('initiate session', function () {
                     // expect(details).to.equal('User is malachi and has these roles: _admin');
                     next();
                 });
+            }], function (err) {
+
+                // expect(err).to.equal('Error: Name or password is incorrect');
+                done(Sofa.stop());
+            });
+    });
+
+    it('couchdb makes new session cookie', function (done) {
+
+        // @todo this test does not work.
+        // must re-work it to get nano coverage
+        Async.waterfall([
+            function (next) {
+
+                // Make connection to db.
+                Nano.db.insert = function (newuser, callback) {
+
+                    console.log('mock insert ran');
+                    var headers = 'mock couchdb new header value';
+                    db.insert = orig;
+                    return callback('breakit', 'test response', headers);
+                };
+
+                Sofa.connect(function (err, sessionid) {
+
+                    expect(sessionid).to.have.length(50);
+                    next();
+                });
+            },
+            function (next) {
+
+                // Ensure db sessionid was set.
+
+                expect(Sofa.sessionid).to.have.length(50);
+                next();
+            },
+            function (next) {
+
+
+                next();
+            },
+            function (next) {
+
+                var fakeInsert = function (userdoc) {
+
+                    Sofa.insert(userdoc, function (err, result) {
+
+                        // console.log(JSON.stringify(err));
+                        // console.log(JSON.stringify(result));
+                        // expect(err.message).to.equal('message');;
+                        // expect(err).to.equal('breakit');
+                        //expect(err).to.equal(null);
+                        //expect(result).to.equal('test response');
+                        // expect(err.name).to.equal('ValidationError');
+                        // expect(err.message).to.equal('\"value\" must be an object');
+                        // console.log('error details: ' + JSON.stringify(err.details) );
+                        // console.log('error ' + JSON.stringify(err) + ' ' + JSON.stringify(result));
+                        next();
+                    });
+                };
+
+                fakeInsert(Fixtures.users[2]);
             }], function (err) {
 
                 // expect(err).to.equal('Error: Name or password is incorrect');

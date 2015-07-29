@@ -19,6 +19,7 @@ var describe = lab.experiment;
 var expect = Code.expect;
 var it = lab.test;
 
+
 describe('bulk loading documents', function () {
 
     it('bulk insert events no previous connection', function (done) {
@@ -49,7 +50,7 @@ describe('bulk loading documents', function () {
             // console.log('bulk insert response: '+ response);
             // console.log('response[0].name: '+ response[0].id);
             expect(err).to.equal(null);
-            expect(response.length).to.equal(3);
+            expect(response.length).to.equal(4);
             expect(response[0].id).to.have.length(32);
             expect(response[0].ok).to.equal(true);
 
@@ -58,7 +59,7 @@ describe('bulk loading documents', function () {
         });
     });
 
-    it('bulk insert events has previous connection', function (done) {
+    it('bulk insert events has previous connection -- creates dev DB state', function (done) {
 
         Async.waterfall([
             function (next) {
@@ -80,12 +81,39 @@ describe('bulk loading documents', function () {
             },
             function (next) {
 
+                // Destroy old database
+                // avoid duplicate records
+
+                Sofa.destroy(function (err, response) {
+
+                    // console.log('------');
+                    expect(err).to.exist();
+                    //expect(response).to.equal('destroyed db');
+                    // console.log(response);
+                    next();
+                });
+            },
+            function (next) {
+
+                // Create new database
+
+                Sofa.create(function (err, response) {
+
+                    // console.log('create entered' + response);
+                    expect(response.ok).to.equal(true);
+                    next();
+                });
+            },
+            function (next) {
+
+                // Put create user records here
                 // Insert Document to DB.
 
                 Sofa.insertBulk(Fixtures.events, function (err, response) {
 
+                    // expect(err).to.equal(null);
                     expect(err).to.equal(null);
-                    expect(response.length).to.equal(3);
+                    expect(response.length).to.equal(4);
                     expect(response[0].id).to.have.length(32);
                     expect(response[0].ok).to.equal(true);
 
@@ -126,6 +154,7 @@ describe('bulk loading documents', function () {
 
                 // Insert Document to DB.
 
+
                 Sofa.insertBulk(Fixtures.events, function (err, response) {
 
                     // console.log('after insert: ', response);
@@ -162,4 +191,3 @@ describe('bulk loading documents', function () {
 
 
 });
-

@@ -21,12 +21,21 @@ var describe = lab.experiment;
 var expect = Code.expect;
 var it = lab.test;
 
-describe('user tests', function () {
+describe('users', function () {
 
     it('successfully create a user', function (done) {
 
+        var mockuser = {
+            'type': 'user',
+            'username': 'Mock',
+            'first': 'Moo',
+            'last': 'Mook',
+            'pw': 'moo',
+            'email': 'mock@hapiu.com',
+            'scope': ['user']
+        };
 
-        User.create(Fixtures.users[0], function (err, result) {
+        User.create(mockuser, function (err, result) {
 
             if (err && err.name === 'ValidationError') {
 
@@ -210,7 +219,200 @@ describe('user tests', function () {
             }], function (err) {
 
                 // expect(err).to.equal('Error: Name or password is incorrect');
-                done();
+                done(Sofa.stop());
+            });
+    });
+
+    it('load user views', function (done) {
+
+        Async.waterfall([
+            function (next) {
+
+                // Make connection to db.
+
+                Sofa.connect(function (err, sessionid) {
+
+                    expect(sessionid).to.have.length(50);
+                    next();
+                });
+            },
+            function (next) {
+
+                // Ensure db sessionid was set.
+
+                expect(Sofa.sessionid).to.have.length(50);
+                next();
+            },
+            function (next) {
+
+                // Insert Document to DB.
+
+                Sofa.insertID(Fixtures.views[0], '_design/users', function (err, response) {
+
+                     // Successful insert document response.
+
+                    // console.log('CALLBACK' + JSON.stringify(response));
+                    // expect(response).to.equal('ok');
+                    // expect(err).to.equal(true);
+                    // expect(response.ok).to.equal(true);
+                    // expect(response.id).to.have.length(32);
+                    next();
+                });
+
+            }], function (err) {
+
+                // expect(err).to.equal('Error: Name or password is incorrect');
+                done(Sofa.stop());
+            });
+    });
+
+    it('successful use of _design/user list view', function (done) {
+
+        Async.waterfall([
+            function (next) {
+
+                // Make connection to db.
+
+                Sofa.connect(function (err, sessionid) {
+
+                    expect(sessionid).to.have.length(50);
+                    next();
+                });
+            },
+            function (next) {
+
+                // Ensure db sessionid was set.
+
+                expect(Sofa.sessionid).to.have.length(50);
+                next();
+            },
+            function (next) {
+
+                // Insert Document to DB.
+
+                // Syntax Sofa.view(designname, viewname, params, callback)
+
+                Sofa.view('users', 'list', null, function (err, response) {
+
+                     // Successful insert document response.
+
+                    // console.log('_design/users/list CALLBACK' + err);
+                    // console.log('_design/users/list CALLBACK' + JSON.stringify(response));
+
+                    expect(response.rows.length).to.equal(4);
+
+                    response.rows.forEach(function (doc) {
+
+                        // Each row from view emitted here.
+                        if (doc.value.email === 'foo@hapiu.com'){
+
+                            // current loading makes two foo@hapiu.com users.
+                            // console.log(doc.key);
+                            expect(doc.key).to.have.length(2);
+                            // console.log(doc.value);
+                        }
+                    });
+
+                    // console.log('map start');
+                    next();
+                });
+
+            }], function (err) {
+
+                // expect(err).to.equal('Error: Name or password is incorrect');
+                done(Sofa.stop());
+            });
+    });
+
+    it('successfully authenticate user', function (done) {
+
+        Async.waterfall([
+            function (next) {
+
+                // Make connection to db.
+
+                Sofa.connect(function (err, sessionid) {
+
+                    expect(sessionid).to.have.length(50);
+                    next();
+                });
+            },
+            function (next) {
+
+                User.authenticate('foo@hapiu.com', 'foo', function (err, response) {
+
+                    // User is authentic
+                    // console.log('authenticate: err: ' + err +' response: ' + response);
+
+                    expect(response).to.equal(true);
+                    next();
+                });
+            }], function (err) {
+
+                // expect(err).to.equal('Error: Name or password is incorrect');
+                done(Sofa.stop());
+            });
+    });
+
+    it('errors when authenticating user', function (done) {
+
+        Async.waterfall([
+            function (next) {
+
+                // Make connection to db.
+
+                Sofa.connect(function (err, sessionid) {
+
+                    expect(sessionid).to.have.length(50);
+                    next();
+                });
+            },
+            function (next) {
+
+                User.authenticate('foo@hapiu.com', null, function (err, response) {
+
+                    // console.log('authenticate: err: ' + err + ' response: ' + response);
+
+                    expect(err).to.exist();
+                    expect(err.message).to.equal('data and hash arguments required');
+
+                    next();
+                });
+            }], function (err) {
+
+                // expect(err).to.equal('Error: Name or password is incorrect');
+                done(Sofa.stop());
+            });
+    });
+
+    it('bad pw fails to authenticate user', function (done) {
+
+        Async.waterfall([
+            function (next) {
+
+                // Make connection to db.
+
+                Sofa.connect(function (err, sessionid) {
+
+                    expect(sessionid).to.have.length(50);
+                    next();
+                });
+            },
+            function (next) {
+
+                User.authenticate('foo@hapiu.com', 'badpw', function (err, response) {
+
+                    // pw fails, user is not authentic
+                    // log bad attempt
+                    // console.log('authenticate: err: ' + err +' response: ' + response);
+
+                    expect(response).to.equal(false);
+                    next();
+                });
+            }], function (err) {
+
+                // expect(err).to.equal('Error: Name or password is incorrect');
+                done(Sofa.stop());
             });
     });
 });

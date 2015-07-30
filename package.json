@@ -1,7 +1,7 @@
 {
   "name": "nano-dev",
   "version": "0.0.1",
-  "description": "Test nano abilities",
+  "description": "coucdb functionality for hapijs application",
   "main": "index.js",
   "dependencies": {
     "bcrypt": "^0.8.4",

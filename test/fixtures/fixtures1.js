@@ -4,6 +4,9 @@
 
     var fixtures = {};
 
+    fixtures.functions = {};
+    fixtures.users = {};
+    fixtures.users.list = {};
 
     fixtures.events = [
         {
@@ -101,6 +104,40 @@
             scope: ['admin', 'user']
         }
     ];
+
+    // list view fixture
+
+    fixtures.users.list = function (doc) {
+
+        if (doc.type === 'user') {
+            // key is id an revision id.
+            emit([doc._id, doc._rev], { email: doc.email, pw: doc.pw, first: doc.first, last: doc.last, username: doc.username, scope: doc.scope });
+        }
+    };
+
+    // Array of _design/xxxxxx views
+    // SAMPLE view document
+    //{
+    //   "_id": "_design/users",
+    //   "_rev": "1-8e794d7de0a81f2086735d619a816b80",
+    //   "language": "javascript",
+    //   "views": {
+    //      "list": {
+    //          "map": "function (doc) {\n
+    //              if(doc.type == 'user') {    \n
+    //                  emit(doc._id , { email: doc.email, first: doc.first, last: doc.last, username: doc.username, scope: doc.scope }); \n        }\n    }"
+    //              }
+    //  }
+    //}
+    // Below: fixture view function.
+    fixtures.views = [{
+            language: 'javascript',
+            views: { list: {
+                    map: fixtures.users.list
+                }
+            }
+    }];
+
 
     module.exports = fixtures;
 }());

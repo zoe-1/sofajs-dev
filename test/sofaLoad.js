@@ -189,5 +189,54 @@ describe('bulk loading documents', function () {
             });
     });
 
+    it('rabbit', function (done) {
+
+        Async.waterfall([
+            function (next) {
+
+                // Make connection to db.
+
+                Sofa.connect(function (err, sessionid) {
+
+                    expect(sessionid).to.have.length(50);
+                    next();
+                });
+            },
+            function (next) {
+
+                Sofa.insertID({ one: 'rabbit sofa doc test', two: 'more docs' }, 'rabbit', function (err, response) {
+
+                     // Successful insert document response.
+
+                    // console.log('CALLBACK' + JSON.stringify(response));
+                    // expect(response).to.equal('ok');
+                    // expect(err).to.equal(true);
+                    // expect(response.ok).to.equal(true);
+                    // expect(response.id).to.have.length(32);
+                    next();
+                });
+
+                // Ensure db sessionid was set.
+
+                // expect(Sofa.sessionid).to.have.length(50);
+                // next();
+            },
+            function (next) {
+
+                // Insert Document to DB.
+
+                Sofa.insert({ name: 'sofa doc test', body: 'more docs' }, function (err, response) {
+
+                    // console.log('after insert: ', response);
+                    expect(response.ok).to.equal(true);
+                    expect(response.id).to.have.length(32);
+                    next();
+                });
+            }], function (err) {
+
+                // expect(err).to.equal('Error: Name or password is incorrect');
+                done(Sofa.stop());
+            });
+    });
 
 });

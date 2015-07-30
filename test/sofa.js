@@ -399,7 +399,7 @@ describe('initiate session', function () {
             });
     });
 
-    it('couchdb makes new session cookie', function (done) {
+    it('couchdb makes new session cookie -- @fix this', function (done) {
 
         // @todo this test does not work.
         // must re-work it to get nano coverage
@@ -574,6 +574,88 @@ describe('insert documents', function () {
                     expect(err.error).to.equal('bad_request');
                     next();
                 });
+            }], function (err) {
+
+                // expect(err).to.equal('Error: Name or password is incorrect');
+                done(Sofa.stop());
+            });
+    });
+
+    it('fail to load document with custom id', function (done) {
+
+        Async.waterfall([
+            function (next) {
+
+                // Make connection to db.
+
+                Sofa.connect(function (err, sessionid) {
+
+                    expect(sessionid).to.have.length(50);
+                    next();
+                });
+            },
+            function (next) {
+
+                // Ensure db sessionid was set.
+
+                expect(Sofa.sessionid).to.have.length(50);
+                next();
+            },
+            function (next) {
+
+                // Insert Document to DB.
+
+                Sofa.insertID(null, null, function (err, response) {
+
+                     // Failed to insert document with ID supplied to couchDB.
+
+                    expect(err).to.exist();
+                    expect(err.message).to.equal('invalid_json');
+                    next();
+                });
+
+            }], function (err) {
+
+                // expect(err).to.equal('Error: Name or password is incorrect');
+                done(Sofa.stop());
+            });
+    });
+
+    it('fail _design/user list view function', function (done) {
+
+        Async.waterfall([
+            function (next) {
+
+                // Make connection to db.
+
+                Sofa.connect(function (err, sessionid) {
+
+                    expect(sessionid).to.have.length(50);
+                    next();
+                });
+            },
+            function (next) {
+
+                // Ensure db sessionid was set.
+
+                expect(Sofa.sessionid).to.have.length(50);
+                next();
+            },
+            function (next) {
+
+                // Insert Document to DB.
+
+                // Syntax Sofa.view(designname, viewname, params, callback)
+
+                Sofa.view('wakakadoc', 'missingview', null, function (err, response) {
+
+                     // Fail to execute view.
+
+                    expect(err).to.exist();
+
+                    next();
+                });
+
             }], function (err) {
 
                 // expect(err).to.equal('Error: Name or password is incorrect');

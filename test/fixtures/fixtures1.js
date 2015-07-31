@@ -6,7 +6,6 @@
 
     fixtures.functions = {};
     fixtures.users = {};
-    fixtures.users.list = {};
 
     fixtures.events = [
         {
@@ -77,31 +76,34 @@
 
     fixtures.users = [
         {
-            'type': 'user',
-            'username': 'Foo Foo',
-            'first': 'Foo',
-            'last': 'Foo',
-            'pw': 'foo',
-            'email': 'foo@hapiu.com',
-            'scope': ['admin', 'user']
+            username: 'Foo Foo',
+            first: 'Foo',
+            last: 'Foo',
+            pw: 'foo',
+            email: 'foo@hapiu.com',
+            scope: ['admin', 'user'],
+            loginAttempts: 0,
+            lockUntil: Date.now() - 60 * 1000
         },
         {
-            'type': 'user',
             'username': 'Bar Head',
             'first': 'Bar',
             'last': 'Head',
             'pw': 'bar',
             'email': 'bar@hapiuni.com',
-            'scope': ['user']
+            'scope': ['user'],
+            loginAttempts: 0,
+            lockUntil: Date.now() - 60 * 1000
         },
         {
-            type: 'user',
             username: 'user1',
             pw: '8899l1v3',
             email: 'js@dali.photo',
             first: 'Jon',
             last: 'Swenson',
-            scope: ['admin', 'user']
+            scope: ['admin', 'user'],
+            loginAttempts: 0,
+            lockUntil: Date.now() - 60 * 1000
         }
     ];
 
@@ -109,9 +111,9 @@
 
     fixtures.users.list = function (doc) {
 
-        if (doc.type === 'user') {
+        if (doc.username && doc.first && doc.last && doc.email) {
             // key is id an revision id.
-            emit([doc._id, doc._rev], { email: doc.email, pw: doc.pw, first: doc.first, last: doc.last, username: doc.username, scope: doc.scope });
+            emit([doc._id, doc._rev], { username: doc.username, first: doc.first, last: doc.last, email: doc.email, pw: doc.pw, scope: doc.scope, loginAttempts: doc.loginAttempts, lockUntil: doc.lockUntil });
         }
     };
 

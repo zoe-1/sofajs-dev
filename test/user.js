@@ -2,6 +2,7 @@ var Code = require('code');
 var Lab = require('lab');
 var Path = require('path');
 var Async = require('async');
+var Hoek = require('hoek');
 var Promise = require('bluebird');
 var Fixtures = require('./fixtures/fixtures1');
 var Bcrypt = require('bcrypt');
@@ -26,13 +27,14 @@ describe('users', function () {
     it('successfully create a user', function (done) {
 
         var mockuser = {
-            'type': 'user',
             'username': 'Mock',
             'first': 'Moo',
             'last': 'Mook',
             'pw': 'moo',
             'email': 'mock@hapiu.com',
-            'scope': ['user']
+            'scope': ['user'],
+            loginAttempts: 0,
+            lockUntil: Date.now() - 60 * 1000
         };
 
         User.create(mockuser, function (err, result) {
@@ -408,6 +410,183 @@ describe('users', function () {
 
                     expect(response).to.equal(false);
                     next();
+                });
+            }], function (err) {
+
+                // expect(err).to.equal('Error: Name or password is incorrect');
+                done(Sofa.stop());
+            });
+    });
+
+    it('get first user', function (done) {
+
+        internals.firstuser = {};
+
+        Async.waterfall([
+            function (next) {
+
+                // Make connection to db.
+
+                Sofa.connect(function (err, sessionid) {
+
+                    expect(sessionid).to.have.length(50);
+                    next();
+                });
+            },
+            function (next) {
+
+                User.getfirst(function (userdoc) {
+
+                    // Edit the usedoc
+                    // console.log('userdoc: ' + JSON.stringify(userdoc));
+                    expect(userdoc.value.first).to.equal('Moo');
+
+                    return next();
+                });
+            }], function (err) {
+
+                // expect(err).to.equal('Error: Name or password is incorrect');
+                done(Sofa.stop());
+            });
+    });
+
+    it('update first user', function (done) {
+
+        internals.firstuser = {};
+
+        Async.waterfall([
+            function (next) {
+
+                // Make connection to db.
+
+                Sofa.connect(function (err, sessionid) {
+
+                    expect(sessionid).to.have.length(50);
+                    next();
+                });
+            },
+            function (next) {
+
+                User.getfirst(function (userdoc) {
+
+                    // Edit the usedoc
+                    // console.log('userdoc: ' + JSON.stringify(userdoc));
+                    expect(userdoc.value.first).to.equal('Moo');
+
+                    // Make variable to modify user
+
+                    internals.firstuser = userdoc;
+
+                    //  Modify firstuser values
+
+                    internals.firstuser.value.first = 'Nooky';
+                    internals.firstuser.value.last = 'Nook';
+
+
+                    // Add _id and _rev values essention to update document.
+
+                    internals.firstuser.value._id = internals.firstuser.id;
+                    internals.firstuser.value._rev = internals.firstuser.key[1];
+
+                    User.update(internals.firstuser.value, function (err, result) {
+
+                        //  expect(err).to.exist();;
+                        expect(result.ok).to.equal(true);
+                        return next();
+                    });
+                });
+            }], function (err) {
+
+                // expect(err).to.equal('Error: Name or password is incorrect');
+                done(Sofa.stop());
+            });
+    });
+
+    it('fail to update Sofa.insert broken', function (done) {
+
+        internals.firstuser = {};
+
+        Async.waterfall([
+            function (next) {
+
+                // Make connection to db.
+
+                Sofa.connect(function (err, sessionid) {
+
+                    expect(sessionid).to.have.length(50);
+                    next();
+                });
+            },
+            function (next) {
+
+                User.getfirst(function (userdoc) {
+
+                    // Edit the usedoc
+                    // console.log('userdoc: ' + JSON.stringify(userdoc));
+                    expect(userdoc.value.first).to.equal('Nooky');
+
+                    // Make variable to modify user
+
+                    var original = Sofa.insert;
+
+                    Sofa.insert = function (doc, callback) {
+
+                        return callback(new Error('Sofa insert failed to load.'));
+                    };
+
+                    User.update(userdoc.value, function (err, result) {
+
+                        Sofa.insert = original;
+
+                        if (err) {
+
+                            expect(err.message).to.equal('Sofa insert failed to load.');
+                            return next();
+                        }
+                        //  expect(err).to.exist();;
+                    });
+                });
+            }], function (err) {
+
+                // expect(err).to.equal('Error: Name or password is incorrect');
+                done(Sofa.stop());
+            });
+    });
+
+    it('fail to update first user', function (done) {
+
+        internals.firstuser = {};
+
+        Async.waterfall([
+            function (next) {
+
+                // Make connection to db.
+
+                Sofa.connect(function (err, sessionid) {
+
+                    expect(sessionid).to.have.length(50);
+                    next();
+                });
+            },
+            function (next) {
+
+                User.getfirst(function (userdoc) {
+
+                    // Edit the usedoc
+                    // console.log('userdoc: ' + JSON.stringify(userdoc));
+                    expect(userdoc.value.first).to.equal('Nooky');
+
+                    User.update(null, function (err, result) {
+
+                        if (err) {
+
+                            // Joi validation did not pass.
+
+                            expect(err.message).to.equal('\"value\" must be an object');
+                            return next();
+                        }
+                        //  expect(err).to.exist();;
+                    });
                 });
             }], function (err) {
 

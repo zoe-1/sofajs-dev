@@ -88,8 +88,7 @@ describe('pre-test cleanup', function () {
                     Config.db = 'sofajs';
                     next();
                 });
-            }
-            ], function (err) {
+            }], function (err) {
 
                 // expect(err).to.equal('Error: Name or password is incorrect');
                 done(Sofa.stop());
@@ -163,8 +162,7 @@ describe('pre-test cleanup', function () {
                     expect(err).to.exist();
                     next();
                 });
-            }
-            ], function (err) {
+            }], function (err) {
 
                 done(Sofa.stop());
             });
@@ -246,8 +244,7 @@ describe('destroy databases', function () {
                     // expect(err).to.exist();
                     next();
                 });
-            }
-            ], function (err) {
+            }], function (err) {
 
                 done(Sofa.stop());
             });
@@ -285,8 +282,7 @@ describe('initiate session', function () {
                     expect(err).to.equal('already connected.');
                     next();
                 });
-            }
-            ], function (err) {
+            }], function (err) {
 
                 // expect(err).to.equal('Error: Name or password is incorrect');
                 done(Sofa.stop());

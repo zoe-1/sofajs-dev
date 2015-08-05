@@ -458,8 +458,74 @@ describe('users', function () {
 
             }, function (next) {
 
+                // Ensure loginAttempts value is correct
+                // and expire the lockout date.
 
+                User.findby('email', 'foo@hapiu.com', function (err, response) {
+
+                    // Get uid for next test.
+
+                    internals.userid = response.id;
+
+                    // Ensure user locked out with appropriate values.
+
+                    expect(response.value.loginAttempts).to.equal(11);
+                    expect(response.value.email).to.equal('foo@hapiu.com');
+                    expect(response.value.lockUntil).to.be.above(Date.now());
+
+                    // Expire the lockout
+
+                    response.value.lockUntil = Date.now() - (60 * 1000 * 60 * 48);
+
+                    response.value._id = response.id;
+                    response.value._rev = response.key[1];
+
+                    User.update(response.value, function (err, result) {
+
+                        if (result) {
+                            // console.log('Update result' + JSON.stringify(result));
+                            //  expect(err).to.exist();;
+                            expect(result.ok).to.equal(true);
+                            internals.userid = result.id;
+                            return next();
+                        }
+                    });
+                });
+            }, function (next) {
+
+                 // Ensure lockUntil date is now expired.
+
+                expect(internals.userid).to.have.length(32);
+
+                User.findbyid(internals.userid, function (err, response) {
+
+                    expect(response.value.lockUntil).to.be.below(Date.now());
+                    next();
+                });
+            }, function (next) {
+
+                // user with expired lockout attempts to login.
+                // reset the loginAttempts event if auth fails.
+
+                User.authenticate('foo@hapiu.com', 'badfoopw', function (err, response) {
+
+                    // User authentication failed
+
+                    expect(response).to.equal(false);
+                    next();
+                });
                 next();
+            }, function (next) {
+
+                // Ensure loginAttempts reset to 1
+
+                expect(internals.userid).to.have.length(32);
+
+                User.findbyid(internals.userid, function (err, response) {
+
+                    expect(response.value.loginAttempts).to.equal(1);
+                    next();
+                });
             }], function (err) {
 
                 // expect(err).to.equal('Error: Name or password is incorrect');
@@ -469,7 +535,7 @@ describe('users', function () {
 });
 
 
-describe('user reactivated', function () {
+describe('locked out', function () {
 
     it('locked out user reactivated.', function (done) {
 
@@ -486,8 +552,7 @@ describe('user reactivated', function () {
             },
             function (next) {
 
-                // Set lockUntil value to be expired.
-
+                // Expire the lockout
 
                 User.findby('email', 'foo@hapiu.com', function (err, response) {
 
@@ -549,9 +614,6 @@ describe('user reactivated', function () {
                 done(Sofa.stop());
             });
     });
-});
-
-describe('user locked down', function () {
 
     it('valid credentials submitted but locked out.', function (done) {
 
@@ -652,8 +714,6 @@ describe('user locked down', function () {
 
                     // User login failed.
                     // IncrementReset occurs setting athenticate user's loginAttempts back to 1.
-                    // console.log('authenticate lockuntil > Now and good pw: err: ' + err +' response: ' + response);
-
                     // expect(response).to.equal('locked out -- badpw33');
                     expect(response).to.equal(false);
                     next();
@@ -665,59 +725,15 @@ describe('user locked down', function () {
                 done(Sofa.stop());
             });
     });
-
-    it('turn off user lockout', function (done) {
-
-        done();
-    });
-
-    // it('user auth incrementReset initiated', function (done) {
-
-    //     Async.waterfall([
-    //         function (next) {
-
-    //             // make connection to db.
-
-    //             Sofa.connect(function (err, sessionid) {
-
-    //                 expect(sessionid).to.have.length(50);
-    //                 next();
-    //             });
-    //         }, function (next) {
-
-    //             //user auth fails and loginAttempts is incremented.
-
-    //             console.log('trying to increment');
-    //             User.authenticate('foo@hapiu.com', 'badfoopw', function (err, response) {
-
-    //                 // User login failed.
-    //                 // IncrementReset occurs setting athenticate user's loginAttempts back to 1.
-    //                 // console.log('authenticate lockuntil > Now and good pw: err: ' + err +' response: ' + response);
-
-    //                 // expect(response).to.equal('locked out -- badpw33');
-    //                 expect(response).to.equal(false);
-    //                 next();
-    //             });
-    //         }, function (next) {
-
-    //             // user auth succeeds and login attempts value is reset.
-
-
-    //             next();
-    //         }], function (err) {
-
-    //             done(Sofa.stop());
-    //         });
-    // });
 });
 
-describe('more user auth', function () {
+describe('mock ups', function () {
 
     before(function (done) {
-    
+
         // Update User db first
 
-        console.log('before running');
+        // console.log('before running');
         Async.waterfall([
             function (next) {
 
@@ -760,7 +776,7 @@ describe('more user auth', function () {
                 });
             }, function (next) {
 
-                // Ensure user is locked down.
+                // Ensure lockdown expired
 
                 expect(internals.userid).to.have.length(32);
 
@@ -782,7 +798,9 @@ describe('more user auth', function () {
             });
     });
 
-    it('user auth incrementReset initiated', function (done) {
+
+
+    it('findby error', function (done) {
 
         Async.waterfall([
             function (next) {
@@ -796,47 +814,185 @@ describe('more user auth', function () {
                 });
             }, function (next) {
 
-                // Ensure user is locked down.
+                internals.original = Sofa.view;
 
-                expect(internals.userid).to.have.length(32);
+                Sofa.view = function (users, list, options, callback) {
 
-                User.findbyid(internals.userid, function (err, response) {
+                    Sofa.view = internals.original;
+                    // console.log('entered mock view');
+                    return callback(true, null);
+                };
+
+                User.findby('boom', 'err', function (err, response) {
+
+                    // console.log('get bad err' + err + response);
 
                     //  User no longer locked out.
-                    console.log('END findbyid response updated user: ' + JSON.stringify(response));
-
-                    expect(response.value.lockUntil).to.be.below(Date.now());
+                    // console.log('findbyid response: ' + JSON.stringify(response));
+                    expect(err).to.equal(true);
                     next();
                 });
             }, function (next) {
 
-                //user auth fails and loginAttempts is incremented.
-
-                User.authenticate('foo@hapiu.com', 'badfoopw', function (err, response) {
-
-                    // User login failed.
-                    // IncrementReset occurs setting athenticate user's loginAttempts back to 1.
-                    // console.log('authenticate lockuntil > Now and good pw: err: ' + err +' response: ' + response);
-
-                    // expect(response).to.equal('locked out -- badpw33');
-                    expect(response).to.equal(false);
-                    next();
-                });
-            }, function (next) {
-
-                User.authenticate('foo@hapiu.com', 'foo', function (err, response) {
-
-                    // User login success.
-                    // IncrementReset occurs setting athenticate user's loginAttempts back to 1.
-                    // console.log('authenticate lockuntil > Now and good pw: err: ' + err +' response: ' + response);
-
-                    // expect(response).to.equal('locked out -- badpw33');
-                    expect(response).to.equal(true);
-                    next();
-                });
+                next();
             }], function (err) {
 
                 done(Sofa.stop());
+            });
+    });
+
+    it('findby no record exists', function (done) {
+
+        Async.waterfall([
+            function (next) {
+
+                // make connection to db.
+
+                Sofa.connect(function (err, sessionid) {
+
+                    expect(sessionid).to.have.length(50);
+                    next();
+                });
+            }, function (next) {
+
+                User.findby('email', 'nonexisting', function (err, response) {
+
+                    // console.log('no record found' + err + response);
+
+                    //  User no longer locked out.
+                    // console.log('findbyid response: ' + JSON.stringify(response));
+                    expect(err).to.equal(null);
+                    expect(response).to.equal('no record found');
+                    next();
+                });
+            }, function (next) {
+
+                next();
+            }], function (err) {
+
+                done();
+            });
+    });
+
+    it('findbyid coverage', function (done) {
+
+        User.findbyid('1baduserid34567', function (err, response) {
+
+            //  User no longer locked out.
+            // console.log('findbyid response: ' + JSON.stringify(response));
+
+            expect(response).to.equal('no record found');
+            expect(response).to.equal('no record found');
+            done();
+        });
+    });
+
+    it('mock user.update joi fail', function (done) {
+
+        User.findby('email', 'foo@hapiu.com', function (err, response) {
+
+            // console.log('mock bad user document update: ' + JSON.stringify(response));
+
+            // Get uid for next test.
+
+            internals.userid = response.id;
+
+            // Ensure user locked out with appropriate values.
+
+            expect(response.value.email).to.equal('foo@hapiu.com');
+
+            // Expire the lockout
+
+            response.value.lockUntil = Date.now() - (60 * 1000 * 60 * 48);
+
+            response.value._id = response.id;
+            response.value._rev = response.key[1];
+
+            // Add bad data to user update document
+
+            response.value.badkey = 'bad data';
+
+            User.update(response.value, function (err, result) {
+
+                if (!err) {
+
+                    //  expect(err).to.exist();;
+                    expect(result.ok).to.equal(true);
+                    internals.userid = result.id;
+                    return done();
+                }
+
+                expect(err.message).to.equal('\"badkey\" is not allowed');
+                return done(Sofa.stop());
+            });
+        });
+    });
+
+    it('mock user.update Sofa.insert failure', function (done) {
+
+        Async.waterfall([
+            function (next) {
+
+                // make connection to db.
+
+                Sofa.connect(function (err, sessionid) {
+
+                    expect(sessionid).to.have.length(50);
+                    next();
+                });
+            }, function (next) {
+
+                // mock Sofa.insert failure
+
+                internals.original = Sofa.insert;
+
+                Sofa.insert = function (newdoc, callback) {
+
+                    Sofa.insert = internals.original;
+                    var error = new Error('mock Sofa.insert error');
+
+                    return callback(error);
+                };
+
+                User.findby('email', 'foo@hapiu.com', function (err, response) {
+
+                    // console.log('mock bad user document update: ' + JSON.stringify(response));
+
+                    // Get uid for next test.
+
+                    internals.userid = response.id;
+
+                    // Ensure user locked out with appropriate values.
+
+                    expect(response.value.email).to.equal('foo@hapiu.com');
+
+                    // Expire the lockout
+
+                    response.value.lockUntil = Date.now() - (60 * 1000 * 60 * 48);
+
+                    response.value._id = response.id;
+                    response.value._rev = response.key[1];
+
+                    // Add bad data to user update document
+
+                    User.update(response.value, function (err, result) {
+
+                        if (!err) {
+
+                            //  expect(err).to.exist();;
+                            expect(result.ok).to.equal(true);
+                            internals.userid = result.id;
+                            return next();
+                        }
+
+                        expect(err.message).to.equal('mock Sofa.insert error');
+                        return next();
+                    });
+                });
+
+            }], function (err) {
+
+                return done(Sofa.stop());
             });
     });
 });

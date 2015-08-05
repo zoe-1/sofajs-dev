@@ -42,28 +42,14 @@ describe('users', function () {
 
             if (err && err.name === 'ValidationError') {
 
-                console.log();
-                console.log('-----------------------');
-                console.log('error name: ' + err.name );
-                console.log('error message: ' + err.message);
-                console.log('error details: ' + JSON.stringify(err.details) );
-                console.log('complete error object below: ');
-                console.log('error ' + JSON.stringify(err) + ' ' + JSON.stringify(result));
                 return done();
 
             } else if (err === 'Error: data and salt arguments required') {
 
                 // bcrypt hash creation failed.
 
-                console.log('');
-                console.log('--------------------');
-                console.log('hash error occurred: ' + JSON.stringify(err));
-                console.log(': ' + err);
                 return done();
             }
-
-            // console.log('hash created: ' + result);
-            // console.log('hash created: ' + JSON.stringify(result));
 
             // user successfully created
 
@@ -116,10 +102,6 @@ describe('users', function () {
                 if (err) {
                     expect(err).to.exist();
                     expect(err.message).to.equal('genSalt function failed');
-                    // expect(err.name).to.equal('ValidationError');
-                    // expect(err.message).to.equal('\"value\" must be an object');
-                    // console.log('error details: ' + JSON.stringify(err.details) );
-                    // console.log('error ' + JSON.stringify(err) + ' ' + JSON.stringify(result));
                     return done();
                 }
             });
@@ -145,10 +127,6 @@ describe('users', function () {
                 if (err) {
                     expect(err).to.exist();
                     expect(err.message).to.equal('bcrypt.hash function failed');
-                    // expect(err.name).to.equal('ValidationError');
-                    // expect(err.message).to.equal('\"value\" must be an object');
-                    // console.log('error details: ' + JSON.stringify(err.details) );
-                    // console.log('error ' + JSON.stringify(err) + ' ' + JSON.stringify(result));
                     return done();
                 }
             });
@@ -173,10 +151,6 @@ describe('users', function () {
                 if (err) {
                     expect(err).to.exist();
                     expect(err.message).to.equal('Sofa.insert function failed');
-                    // expect(err.name).to.equal('ValidationError');
-                    // expect(err.message).to.equal('\"value\" must be an object');
-                    // console.log('error details: ' + JSON.stringify(err.details) );
-                    // console.log('error ' + JSON.stringify(err) + ' ' + JSON.stringify(result));
                     return done();
                 }
             });
@@ -221,7 +195,8 @@ describe('users', function () {
                 next();
             }], function (err) {
 
-                // expect(err).to.equal('Error: Name or password is incorrect');
+                // created user fixtures
+
                 done(Sofa.stop());
             });
     });
@@ -231,7 +206,7 @@ describe('users', function () {
         Async.waterfall([
             function (next) {
 
-                // Make connection to db.
+                // make connection to db.
 
                 Sofa.connect(function (err, sessionid) {
 
@@ -248,23 +223,20 @@ describe('users', function () {
             },
             function (next) {
 
-                // Insert Document to DB.
+                // Insert view into DB.
 
                 Sofa.insertID(Fixtures.views[0], '_design/users', function (err, response) {
 
-                     // Successful insert document response.
+                     // Successful insert response.
 
-                    // console.log('CALLBACK' + JSON.stringify(response));
-                    // expect(response).to.equal('ok');
-                    // expect(err).to.equal(true);
-                    // expect(response.ok).to.equal(true);
-                    // expect(response.id).to.have.length(32);
+                    expect(response.ok).to.equal(true);
                     next();
                 });
 
             }], function (err) {
 
-                // expect(err).to.equal('Error: Name or password is incorrect');
+                // Inserted couchDB view from fixtures
+
                 done(Sofa.stop());
             });
     });
@@ -274,7 +246,7 @@ describe('users', function () {
         Async.waterfall([
             function (next) {
 
-                // Make connection to db.
+                // make connection to db.
 
                 Sofa.connect(function (err, sessionid) {
 
@@ -291,32 +263,25 @@ describe('users', function () {
             },
             function (next) {
 
-                // Insert Document to DB.
-
-                // Syntax Sofa.view(designname, viewname, params, callback)
+                // Use view to access user info
 
                 Sofa.view('users', 'list', null, function (err, response) {
-
-                     // Successful insert document response.
-
-                    // console.log('_design/users/list CALLBACK' + err);
-                    // console.log('_design/users/list CALLBACK' + JSON.stringify(response));
 
                     expect(response.rows.length).to.equal(4);
 
                     response.rows.forEach(function (doc) {
 
                         // Each row from view emitted here.
+                        // foo user successfully found
+
                         if (doc.value.email === 'foo@hapiu.com'){
 
-                            // current loading makes two foo@hapiu.com users.
-                            // console.log(doc.key);
+                            // below key from view is an array with two elements.
+
                             expect(doc.key).to.have.length(2);
-                            // console.log(doc.value);
                         }
                     });
 
-                    // console.log('map start');
                     next();
                 });
 
@@ -332,7 +297,7 @@ describe('users', function () {
         Async.waterfall([
             function (next) {
 
-                // Make connection to db.
+                // make connection to db.
 
                 Sofa.connect(function (err, sessionid) {
 
@@ -345,14 +310,12 @@ describe('users', function () {
                 User.authenticate('foo@hapiu.com', 'foo', function (err, response) {
 
                     // User is authentic
-                    // console.log('authenticate: err: ' + err +' response: ' + response);
 
                     expect(response).to.equal(true);
                     next();
                 });
             }], function (err) {
 
-                // expect(err).to.equal('Error: Name or password is incorrect');
                 done(Sofa.stop());
             });
     });
@@ -362,7 +325,7 @@ describe('users', function () {
         Async.waterfall([
             function (next) {
 
-                // Make connection to db.
+                // make connection to db.
 
                 Sofa.connect(function (err, sessionid) {
 
@@ -372,9 +335,9 @@ describe('users', function () {
             },
             function (next) {
 
-                User.authenticate('foo@hapiu.com', null, function (err, response) {
+                // no password submitted
 
-                    // console.log('authenticate: err: ' + err + ' response: ' + response);
+                User.authenticate('foo@hapiu.com', null, function (err, response) {
 
                     expect(err).to.exist();
                     expect(err.message).to.equal('data and hash arguments required');
@@ -383,7 +346,6 @@ describe('users', function () {
                 });
             }], function (err) {
 
-                // expect(err).to.equal('Error: Name or password is incorrect');
                 done(Sofa.stop());
             });
     });
@@ -393,7 +355,7 @@ describe('users', function () {
         Async.waterfall([
             function (next) {
 
-                // Make connection to db.
+                // make connection to db.
 
                 Sofa.connect(function (err, sessionid) {
 
@@ -407,24 +369,22 @@ describe('users', function () {
 
                     // pw fails, user is not authentic
                     // log bad attempt
-                    // console.log('authenticate: err: ' + err +' response: ' + response);
 
                     expect(response).to.equal(false);
                     next();
                 });
             }], function (err) {
 
-                // expect(err).to.equal('Error: Name or password is incorrect');
                 done(Sofa.stop());
             });
     });
 
-    it('fail authentication multiple times and lockout ', function (done) {
+    it('multiple authentications results in lockout ', function (done) {
 
         Async.waterfall([
             function (next) {
 
-                // Make connection to db.
+                // make connection to db.
 
                 Sofa.connect(function (err, sessionid) {
 
@@ -434,7 +394,7 @@ describe('users', function () {
             },
             function (next) {
 
-                // Make 9-10 failed attempts and cause lockdown.
+                // make 9-10 failed attempts and cause lockdown.
 
                 var attempt = function attempt () {
 
@@ -459,7 +419,7 @@ describe('users', function () {
             }, function (next) {
 
                 // Ensure loginAttempts value is correct
-                // and expire the lockout date.
+                // and lockUntil date is correct.
 
                 User.findby('email', 'foo@hapiu.com', function (err, response) {
 
@@ -467,13 +427,13 @@ describe('users', function () {
 
                     internals.userid = response.id;
 
-                    // Ensure user locked out with appropriate values.
+                    // Ensure user is locked out with appropriate values.
 
                     expect(response.value.loginAttempts).to.equal(11);
                     expect(response.value.email).to.equal('foo@hapiu.com');
                     expect(response.value.lockUntil).to.be.above(Date.now());
 
-                    // Expire the lockout
+                    // Expire the lockout (turn lockout off)
 
                     response.value.lockUntil = Date.now() - (60 * 1000 * 60 * 48);
 
@@ -483,8 +443,6 @@ describe('users', function () {
                     User.update(response.value, function (err, result) {
 
                         if (result) {
-                            // console.log('Update result' + JSON.stringify(result));
-                            //  expect(err).to.exist();;
                             expect(result.ok).to.equal(true);
                             internals.userid = result.id;
                             return next();
@@ -505,7 +463,7 @@ describe('users', function () {
             }, function (next) {
 
                 // user with expired lockout attempts to login.
-                // reset the loginAttempts event if auth fails.
+                // restart logging loginAttempts even if auth fails.
 
                 User.authenticate('foo@hapiu.com', 'badfoopw', function (err, response) {
 
@@ -528,7 +486,6 @@ describe('users', function () {
                 });
             }], function (err) {
 
-                // expect(err).to.equal('Error: Name or password is incorrect');
                 done(Sofa.stop());
             });
     });
@@ -556,16 +513,17 @@ describe('locked out', function () {
 
                 User.findby('email', 'foo@hapiu.com', function (err, response) {
 
-                    // console.log('locked out user: ' + JSON.stringify(response));
-
                     expect(response.value.email).to.equal('foo@hapiu.com');
-
 
                     // Simulated lockUntil date time expiriation.
 
                     response.value.lockUntil = Date.now() - (60 * 1000 * 60 * 48);
 
-                    // Add _id and _rev values essention to update document.
+                    // Simulate loginAttempts exceeded limit causing lockout
+
+                    response.value.loginAttempts = 11;
+
+                    // Add _id and _rev values essential to update document.
 
                     response.value._id = response.id;
                     response.value._rev = response.key[1];
@@ -573,8 +531,10 @@ describe('locked out', function () {
                     User.update(response.value, function (err, result) {
 
                         if (result) {
-                            // console.log('Update result' + JSON.stringify(result));
-                            //  expect(err).to.exist();;
+
+                            // user document successfully updated
+                            // no longer locked out
+
                             expect(result.ok).to.equal(true);
                             internals.userid = result.id;
                             return next();
@@ -589,33 +549,52 @@ describe('locked out', function () {
 
                 User.findbyid(internals.userid, function (err, response) {
 
-                    //  User no longer locked out.
-                    // console.log('END findbyid response updated user: ' + JSON.stringify(response));
+
+                    //  user no longer locked out.
 
                     expect(response.value.lockUntil).to.be.below(Date.now());
+
+                    // user loginAttempts is still above lock out threshold
+
+                    expect(response.value.loginAttempts).to.equal(11);
+
                     next();
                 });
             }, function (next) {
 
-                // Successfully login and user incrementReset occurs.
+                // successfully login causing user incrementReset
 
                 User.authenticate('foo@hapiu.com', 'foo', function (err, response) {
 
                     // User successfully logged in.
                     // IncrementReset occurs setting athenticate user's loginAttempts back to 1.
-                    // console.log('authenticate lockuntil > Now and good pw: err: ' + err +' response: ' + response);
 
                     expect(response).to.equal(true);
                     next();
                 });
+            }, function (next) {
+
+                // get users loginAttempts value
+
+                User.findbyid(internals.userid, function (err, response) {
+
+                    //  user no longer locked out.
+
+                    expect(response.value.lockUntil).to.be.below(Date.now());
+
+                    // loginAttempts reset to 1
+
+                    expect(response.value.loginAttempts).to.equal(1);
+
+                    next();
+                });
             }], function (err) {
 
-                // expect(err).to.equal('error: name or password is incorrect');
                 done(Sofa.stop());
             });
     });
 
-    it('valid credentials submitted but locked out.', function (done) {
+    it('valid credentials submitted but still locked out.', function (done) {
 
         Async.waterfall([
             function (next) {
@@ -633,15 +612,15 @@ describe('locked out', function () {
 
                 User.findby('email', 'foo@hapiu.com', function (err, response) {
 
-                    // console.log('locked out user: ' + JSON.stringify(response));
-
                     expect(response.value.email).to.equal('foo@hapiu.com');
 
-                    // Simulated lockUntil date time expiriation.
+                    // simulate lock out setting lockUntil to a future date.
 
                     response.value.lockUntil = Date.now() + (60 * 1000 * 60 * 48);
 
-                    // Add _id and _rev values essention to update document.
+                    response.value.loginAttempts = 11;
+
+                    // add _id and _rev values essential to update document.
 
                     response.value._id = response.id;
                     response.value._rev = response.key[1];
@@ -649,8 +628,9 @@ describe('locked out', function () {
                     User.update(response.value, function (err, result) {
 
                         if (result) {
-                            // console.log('Updated locked down result' + JSON.stringify(result));
-                            //  expect(err).to.exist();;
+
+                            // user updated with locked out lockUntil values
+
                             expect(result.ok).to.equal(true);
                             internals.userid = result.id;
                             return next();
@@ -659,41 +639,35 @@ describe('locked out', function () {
                 });
             }, function (next) {
 
-                // Ensure user is locked down.
+                // ensure user is locked down.
 
                 expect(internals.userid).to.have.length(32);
 
                 User.findbyid(internals.userid, function (err, response) {
 
-                    //  User no longer locked out.
-                    // console.log('END findbyid response updated user: ' + JSON.stringify(response));
+                    //  user is locked out.
 
                     expect(response.value.lockUntil).to.be.above(Date.now());
                     next();
                 });
             }, function (next) {
 
-                // attempt to authenticate locked down user w. valid credentials.
+                // authenticate locked out user w. valid credentials.
 
                 User.authenticate('foo@hapiu.com', 'foo', function (err, response) {
 
+                    // user login failed.
 
-                    // User login failed.
-                    // IncrementReset occurs setting athenticate user's loginAttempts back to 1.
-                    // console.log('authenticate lockuntil > Now and good pw: err: ' + err +' response: ' + response);
-
-                    // expect(response).to.equal('locked out -- okpw');
                     expect(response).to.equal(false);
                     next();
                 });
             }], function (err) {
 
-                // expect(err).to.equal('error: name or password is incorrect');
                 done(Sofa.stop());
             });
     });
 
-    it('invalid credentials submitted and locked out', function (done) {
+    it('authenticate with invalid credentials when locked out', function (done) {
 
         Async.waterfall([
             function (next) {
@@ -711,10 +685,7 @@ describe('locked out', function () {
 
                 User.authenticate('foo@hapiu.com', 'badfoopw', function (err, response) {
 
-
-                    // User login failed.
-                    // IncrementReset occurs setting athenticate user's loginAttempts back to 1.
-                    // expect(response).to.equal('locked out -- badpw33');
+                    // user login failed.
                     expect(response).to.equal(false);
                     next();
                 });
@@ -731,9 +702,8 @@ describe('mock ups', function () {
 
     before(function (done) {
 
-        // Update User db first
+        // update records before mockups
 
-        // console.log('before running');
         Async.waterfall([
             function (next) {
 
@@ -750,15 +720,13 @@ describe('mock ups', function () {
 
                 User.findby('email', 'foo@hapiu.com', function (err, response) {
 
-                    // console.log('locked out user: ' + JSON.stringify(response));
-
                     expect(response.value.email).to.equal('foo@hapiu.com');
 
-                    // Simulated unlocked time settings.
+                    // Simulate unlocked time settings.
 
                     response.value.lockUntil = Date.now() - (60 * 1000 * 60 * 48);
 
-                    // Add _id and _rev values essention to update document.
+                    // set _id and _rev values essential to update document.
 
                     response.value._id = response.id;
                     response.value._rev = response.key[1];
@@ -766,8 +734,9 @@ describe('mock ups', function () {
                     User.update(response.value, function (err, result) {
 
                         if (result) {
-                            // console.log('Updated locked down result' + JSON.stringify(result));
-                            //  expect(err).to.exist();;
+
+                            // foo user record successfullly updated
+
                             expect(result.ok).to.equal(true);
                             internals.userid = result.id;
                             return next();
@@ -776,28 +745,22 @@ describe('mock ups', function () {
                 });
             }, function (next) {
 
-                // Ensure lockdown expired
+                // ensure lockdown expired
 
                 expect(internals.userid).to.have.length(32);
 
                 User.findbyid(internals.userid, function (err, response) {
 
-                    //  User no longer locked out.
-                    // console.log('END findbyid response updated user: ' + JSON.stringify(response));
+                    //  no longer locked out.
 
                     expect(response.value.lockUntil).to.be.below(Date.now());
                     next();
                 });
-            }, function (next) {
-
-                next();
-
             }], function (err) {
 
                 done(Sofa.stop());
             });
     });
-
 
 
     it('findby error', function (done) {
@@ -816,25 +779,22 @@ describe('mock ups', function () {
 
                 internals.original = Sofa.view;
 
+                // create mock up
+
                 Sofa.view = function (users, list, options, callback) {
 
                     Sofa.view = internals.original;
-                    // console.log('entered mock view');
                     return callback(true, null);
                 };
 
+                // mock errors to get coverage
+                // below findby() uses above mock Sofa.view and gets error in callback.
+
                 User.findby('boom', 'err', function (err, response) {
 
-                    // console.log('get bad err' + err + response);
-
-                    //  User no longer locked out.
-                    // console.log('findbyid response: ' + JSON.stringify(response));
                     expect(err).to.equal(true);
                     next();
                 });
-            }, function (next) {
-
-                next();
             }], function (err) {
 
                 done(Sofa.stop());
@@ -857,15 +817,12 @@ describe('mock ups', function () {
 
                 User.findby('email', 'nonexisting', function (err, response) {
 
-                    // console.log('no record found' + err + response);
+                    //  record does not exist
 
-                    //  User no longer locked out.
-                    // console.log('findbyid response: ' + JSON.stringify(response));
                     expect(err).to.equal(null);
                     expect(response).to.equal('no record found');
                     next();
                 });
-            }, function (next) {
 
                 next();
             }], function (err) {
@@ -878,8 +835,7 @@ describe('mock ups', function () {
 
         User.findbyid('1baduserid34567', function (err, response) {
 
-            //  User no longer locked out.
-            // console.log('findbyid response: ' + JSON.stringify(response));
+            // id does not exist
 
             expect(response).to.equal('no record found');
             expect(response).to.equal('no record found');
@@ -891,13 +847,11 @@ describe('mock ups', function () {
 
         User.findby('email', 'foo@hapiu.com', function (err, response) {
 
-            // console.log('mock bad user document update: ' + JSON.stringify(response));
-
             // Get uid for next test.
 
             internals.userid = response.id;
 
-            // Ensure user locked out with appropriate values.
+            // Ensure got user with appropriate values.
 
             expect(response.value.email).to.equal('foo@hapiu.com');
 
@@ -908,7 +862,7 @@ describe('mock ups', function () {
             response.value._id = response.id;
             response.value._rev = response.key[1];
 
-            // Add bad data to user update document
+            // set bad data cause Joi validation error
 
             response.value.badkey = 'bad data';
 
@@ -916,13 +870,15 @@ describe('mock ups', function () {
 
                 if (!err) {
 
-                    //  expect(err).to.exist();;
                     expect(result.ok).to.equal(true);
                     internals.userid = result.id;
                     return done();
                 }
 
+                // error found
+
                 expect(err.message).to.equal('\"badkey\" is not allowed');
+
                 return done(Sofa.stop());
             });
         });
@@ -956,36 +912,37 @@ describe('mock ups', function () {
 
                 User.findby('email', 'foo@hapiu.com', function (err, response) {
 
-                    // console.log('mock bad user document update: ' + JSON.stringify(response));
-
-                    // Get uid for next test.
+                    // get uid for next test.
 
                     internals.userid = response.id;
 
-                    // Ensure user locked out with appropriate values.
+                    // ensure user locked out with appropriate values.
 
                     expect(response.value.email).to.equal('foo@hapiu.com');
 
-                    // Expire the lockout
+                    // expire the lockout
 
                     response.value.lockUntil = Date.now() - (60 * 1000 * 60 * 48);
 
                     response.value._id = response.id;
                     response.value._rev = response.key[1];
 
-                    // Add bad data to user update document
+                    // below update() utilizes above mock Sofa.insert
+                    // causing coverage of insert function returning an error.
 
                     User.update(response.value, function (err, result) {
 
                         if (!err) {
 
-                            //  expect(err).to.exist();;
                             expect(result.ok).to.equal(true);
                             internals.userid = result.id;
                             return next();
                         }
 
+                        // received error from mock Sofa.insert
+
                         expect(err.message).to.equal('mock Sofa.insert error');
+
                         return next();
                     });
                 });

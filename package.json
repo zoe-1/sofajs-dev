@@ -1,5 +1,5 @@
 {
-  "name": "nano-dev",
+  "name": "sofajs",
   "version": "0.0.1",
   "description": "coucdb functionality for hapijs application",
   "main": "index.js",

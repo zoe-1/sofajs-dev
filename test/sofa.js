@@ -69,7 +69,7 @@ describe('pre-test cleanup', function () {
 
                 // Create new database
 
-                Sofa.create(function (err, response) {
+                Sofa.createdb(function (err, response) {
 
                     // console.log('create entered' + response);
                     expect(response.ok).to.equal(true);
@@ -82,7 +82,7 @@ describe('pre-test cleanup', function () {
 
                 Config.db = null;
 
-                Sofa.create(function (err, response) {
+                Sofa.createdb(function (err, response) {
 
                     expect(err).to.exist();
                     Config.db = 'sofajs';
@@ -145,7 +145,7 @@ describe('pre-test cleanup', function () {
 
                 // create DB with no pre-existing session
 
-                Sofa.create(function (err, response) {
+                Sofa.createdb(function (err, response) {
 
                     // console.log('create entered' + response);
                     expect(response.ok).to.equal(true);
@@ -157,7 +157,7 @@ describe('pre-test cleanup', function () {
 
                 // Fail to create db with no session previously existing  Coverage play.
 
-                Sofa.create(function (err, response) {
+                Sofa.createdb(function (err, response) {
 
                     expect(err).to.exist();
                     next();
@@ -188,7 +188,7 @@ describe('destroy databases', function () {
 
                 // Remake DB because future tests assume it exits.
 
-                Sofa.create(function (err, response) {
+                Sofa.createdb(function (err, response) {
 
                     // expect(err).to.exist();
                     expect(response.ok).to.equal(true);
@@ -499,6 +499,44 @@ describe('insert documents', function () {
             });
     });
 
+    it('insertBulk group of users', function (done) {
+
+        Async.waterfall([
+            function (next) {
+
+                // Make connection to db.
+
+                Sofa.connect(function (err, sessionid) {
+
+                    expect(sessionid).to.have.length(50);
+                    next();
+                });
+            },
+            function (next) {
+
+                // Ensure db sessionid was set.
+
+                expect(Sofa.sessionid).to.have.length(50);
+                next();
+            },
+            function (next) {
+
+                // Insert Documents Bulk to DB.
+
+                Sofa.insertBulk(Fixtures.events, function (err, response) {
+
+                    // console.log('after insert bulk: ', response);
+                    expect(response[0].ok).to.equal(true);
+                    expect(response[0].id).to.have.length(32);
+                    next();
+                });
+            }], function (err) {
+
+                // expect(err).to.equal('Error: Name or password is incorrect');
+                done(Sofa.stop());
+            });
+    });
+
     it('fail insert with previous DB connection', function (done) {
 
         Async.waterfall([
@@ -589,15 +627,13 @@ describe('insert documents', function () {
                     expect(sessionid).to.have.length(50);
                     next();
                 });
-            },
-            function (next) {
+            }, function (next) {
 
                 // Ensure db sessionid was set.
 
                 expect(Sofa.sessionid).to.have.length(50);
                 next();
-            },
-            function (next) {
+            }, function (next) {
 
                 // Insert Document to DB.
 
@@ -607,6 +643,19 @@ describe('insert documents', function () {
 
                     expect(err).to.exist();
                     expect(err.message).to.equal('invalid_json');
+                    next();
+                });
+            }, function (next) {
+
+                // Insert Document to DB.
+
+                Sofa.insertID({ name: 'hapi document', message: 'long hapi message' }, 'hapi', function (err, response) {
+
+                     // Successfully inserted document with ID supplied to couchDB.
+
+                    // console.log('**' + JSON.stringify(response));
+                    expect(response.id).to.equal('hapi');
+                    expect(response.ok).to.equal(true);
                     next();
                 });
 

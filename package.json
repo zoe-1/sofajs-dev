@@ -7,12 +7,14 @@
     "async": "^1.4.0",
     "bcrypt": "^0.8.4",
     "bluebird": "^2.9.34",
+    "gfm": "0.0.1",
     "hoek": "^2.14.0",
     "joi": "^6.6.1",
     "nano": "6.x.x"
   },
   "devDependencies": {
     "code": "1.x.x",
+    "gfm": "0.0.1",
     "lab": "5.x.x"
   },
   "scripts": {

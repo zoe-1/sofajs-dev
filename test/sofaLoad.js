@@ -97,7 +97,7 @@ describe('bulk loading documents', function () {
 
                 // Create new database
 
-                Sofa.create(function (err, response) {
+                Sofa.createdb(function (err, response) {
 
                     // console.log('create entered' + response);
                     expect(response.ok).to.equal(true);

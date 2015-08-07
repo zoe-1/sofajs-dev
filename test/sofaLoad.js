@@ -64,23 +64,6 @@ describe('bulk loading documents', function () {
         Async.waterfall([
             function (next) {
 
-                // Make connection to db.
-
-                Sofa.connect(function (err, sessionid) {
-
-                    expect(sessionid).to.have.length(50);
-                    next();
-                });
-            },
-            function (next) {
-
-                // Ensure db sessionid was set.
-
-                expect(Sofa.sessionid).to.have.length(50);
-                next();
-            },
-            function (next) {
-
                 // Destroy old database
                 // avoid duplicate records
 
@@ -131,23 +114,6 @@ describe('bulk loading documents', function () {
     it('fail bulk insert with previous DB connection', function (done) {
 
         Async.waterfall([
-            function (next) {
-
-                // Make connection to db.
-
-                Sofa.connect(function (err, sessionid) {
-
-                    expect(sessionid).to.have.length(50);
-                    next();
-                });
-            },
-            function (next) {
-
-                // Ensure db sessionid was set.
-
-                expect(Sofa.sessionid).to.have.length(50);
-                next();
-            },
             function (next) {
 
                 Sofa.sessionid = 'badsessionid';

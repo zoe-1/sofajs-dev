@@ -310,7 +310,7 @@ describe('initiate session', function () {
 
                 // Ensure db sessionid was set.
 
-                expect(Sofa.sessionid).to.equal(undefined);
+                expect(Sofa.sessionid).to.equal(null);
                 next();
             }], function (err) {
 
@@ -466,23 +466,6 @@ describe('insert documents', function () {
         Async.waterfall([
             function (next) {
 
-                // Make connection to db.
-
-                Sofa.connect(function (err, sessionid) {
-
-                    expect(sessionid).to.have.length(50);
-                    next();
-                });
-            },
-            function (next) {
-
-                // Ensure db sessionid was set.
-
-                expect(Sofa.sessionid).to.have.length(50);
-                next();
-            },
-            function (next) {
-
                 // Insert Document to DB.
 
                 Sofa.insert({ name: 'sofa doc test', body: 'more docs' }, function (err, response) {
@@ -620,21 +603,6 @@ describe('insert documents', function () {
         Async.waterfall([
             function (next) {
 
-                // Make connection to db.
-
-                Sofa.connect(function (err, sessionid) {
-
-                    expect(sessionid).to.have.length(50);
-                    next();
-                });
-            }, function (next) {
-
-                // Ensure db sessionid was set.
-
-                expect(Sofa.sessionid).to.have.length(50);
-                next();
-            }, function (next) {
-
                 // Insert Document to DB.
 
                 Sofa.insertID(null, null, function (err, response) {
@@ -656,9 +624,44 @@ describe('insert documents', function () {
                     // console.log('**' + JSON.stringify(response));
                     expect(response.id).to.equal('hapi');
                     expect(response.ok).to.equal(true);
+
+                    // Delete session settings to force reconnection on next test. coverage
+                    Sofa.stop();
                     next();
                 });
+            }, function (next) {
 
+                // Insert Document to DB with previous session destroyed.
+
+                Sofa.insertID({ name: 'hapi document2', message: 'long hapi message2' }, 'hapi2', function (err, response) {
+
+                    // Note: cannot make duplicate ids.
+                    // Successfully inserted document with ID supplied to couchDB.
+
+                    // console.log('**' + JSON.stringify(err + '--' + response));
+                    expect(response.id).to.equal('hapi2');
+                    expect(response.ok).to.equal(true);
+
+                    next();
+                });
+            }, function (next) {
+
+                // Fail document insert to DB with previous session destroyed.
+
+                Sofa.insertID(null, null, function (err, response) {
+
+                    // Note: cannot make duplicate ids.
+                    // Successfully inserted document with ID supplied to couchDB.
+
+                    // console.log('**' + JSON.stringify(err + '--' + response));
+                    expect(err).to.exist();
+                    expect(err.message).to.equal('invalid_json');
+
+                    // Delete session settings to force reconnection on next step.
+                    Sofa.stop();
+
+                    next();
+                });
             }], function (err) {
 
                 // expect(err).to.equal('Error: Name or password is incorrect');
@@ -689,7 +692,6 @@ describe('insert documents', function () {
             function (next) {
 
                 // Insert Document to DB.
-
                 // Syntax Sofa.view(designname, viewname, params, callback)
 
                 Sofa.view('wakakadoc', 'missingview', null, function (err, response) {

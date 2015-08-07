@@ -8,8 +8,10 @@
     "bcrypt": "^0.8.4",
     "bluebird": "^2.9.34",
     "gfm": "0.0.1",
+    "highlight.js": "^8.7.0",
     "hoek": "^2.14.0",
     "joi": "^6.6.1",
+    "marked": "^0.3.5",
     "nano": "6.x.x"
   },
   "devDependencies": {

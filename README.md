@@ -35,27 +35,27 @@ creating or updating.
 ## Contents 
 
 ### Sofa
-[connect(callback)](#sofa-connect)
-[createdb()](#sofa-createdb)
-[current()](#sofa-current)
-[destroy()](#sofa-destroy)
-[insert(document, callback(err, response))](#sofa-insert)
-[insertBulk(\['array', 'Of', 'Documents'\], callback(err, response))](#sofa-insertBulk)
-[insertID(document, suppliedID, callback(err, response))](#sofa-insertID)
-[stop()](#sofa-stop)
-[view(design, viewname, params, callback(err, response))](#sofa-view)
+[connect(callback)](#sofa-connect)<br/>
+[createdb()](#sofa-createdb)<br/>
+[current()](#sofa-current)<br/>
+[destroy()](#sofa-destroy)<br/>
+[insert(document, callback(err, response))](#sofa-insert)<br/>
+[insertBulk(\['array', 'Of', 'Documents'\], callback(err, response))](#sofa-insertBulk)<br/>
+[insertID(document, suppliedID, callback(err, response))](#sofa-insertID)<br/>
+[stop()](#sofa-stop)<br/>
+[view(design, viewname, params, callback(err, response))](#sofa-view)<br/>
 
 ### User
-[authenticate(email, pw, callback(err, response))](#user-authenticate)
-[create(userdoc, callback(err, result))](#user-create)
-[findby(key, value, callback(err, document))](#user-findby) 
-[findbyid(id, callback(err, document))](#user-findbyid) 
-[schema](#user-schema)
-[update(newdoc, callback(err, result))](#user-update) 
+[authenticate(email, pw, callback(err, response))](#user-authenticate)<br/>
+[create(userdoc, callback(err, result))](#user-create)<br/>
+[findby(key, value, callback(err, document))](#user-findby)<br/> 
+[findbyid(id, callback(err, document))](#user-findbyid) <br/>
+[schema](#user-schema)<br/>
+[update(newdoc, callback(err, result))](#user-update) <br/>
 
 #### user internals
-[_increment(doc, callback(err, result))](#user-_increment)
-[_incrementReset(doc, callback(err, result))](#user-_incrementReset)
+[_increment(doc, callback(err, result))](#user-_increment)<br/>
+[_incrementReset(doc, callback(err, result))](#user-_incrementReset)<br/>
 
 
 ### <a name="packages-used">Dependencies</a> 
@@ -66,6 +66,7 @@ creating or updating.
 * [bluebird](https://github.com/petkaantonov/bluebird)
 * [joi](https://github.com/hapijs/joi)
 * [lab](https://github.com/hapijs/lab)
+* [marked](https://github.com/chjj/marked)
 * [nano](https://github.com/dscape/nano)
 
 

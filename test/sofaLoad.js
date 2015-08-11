@@ -67,7 +67,7 @@ describe('bulk loading documents', function () {
                 // Destroy old database
                 // avoid duplicate records
 
-                Sofa.destroy(function (err, response) {
+                Sofa.destroydb(function (err, response) {
 
                     // console.log('------');
                     expect(err).to.exist();

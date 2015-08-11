@@ -56,7 +56,7 @@ describe('pre-test cleanup', function () {
 
                 // Destroy old database
 
-                Sofa.destroy(function (err, response) {
+                Sofa.destroydb(function (err, response) {
 
                     // console.log('------');
                     expect(err).to.exist();
@@ -129,7 +129,7 @@ describe('pre-test cleanup', function () {
                 // If db exists destroy it.
                 // Destroy old database. This passes even if it does not exist.
 
-                Sofa.destroy(function (err, response) {
+                Sofa.destroydb(function (err, response) {
 
                     // console.log('------');
                     expect(response).to.equal('destroyed db');
@@ -179,7 +179,7 @@ describe('destroy databases', function () {
 
                 // Get coverage
 
-                Sofa.destroy(function (err, response) {
+                Sofa.destroydb(function (err, response) {
 
                     expect(response).to.equal('destroyed db');
                     next();
@@ -205,7 +205,7 @@ describe('destroy databases', function () {
         // No session id previously exists when making DB.
 
         Config.db = null;
-        Sofa.destroy(function (err, response) {
+        Sofa.destroydb(function (err, response) {
 
             Config.db = 'sofajs';
 
@@ -235,7 +235,7 @@ describe('destroy databases', function () {
                 Config.db = null;
 
                 // fail to destroy existing DB get coverage.
-                Sofa.destroy(function (err, response) {
+                Sofa.destroydb(function (err, response) {
 
                     Config.db = 'sofajs';
                     expect(err.message).to.equal('Only GET,HEAD allowed');
@@ -456,6 +456,7 @@ describe('initiate session', function () {
                 done(Sofa.stop());
             });
     });
+
 });
 
 

@@ -7,6 +7,7 @@ var Promise = require('bluebird');
 var Fixtures = require('./fixtures/fixtures1');
 var Bcrypt = require('bcrypt');
 var Sofa = require('../lib/sofa');
+var Nano = require('nano')('http://localhost:5984');
 
 var User = require('../lib/user');
 
@@ -22,6 +23,7 @@ var describe = lab.experiment;
 var before = lab.before;
 var expect = Code.expect;
 var it = lab.test;
+
 
 describe('users', function () {
 
@@ -61,6 +63,7 @@ describe('users', function () {
         });
     });
 
+
     it('fail to create users', function (done) {
 
         Fixtures.users[2].username = null;
@@ -68,6 +71,31 @@ describe('users', function () {
         var createUser = function (userdoc) {
 
             User.create(userdoc, function (err, result) {
+
+                Fixtures.users[2].username = 'user1ono';
+
+                if (err && err.name === 'ValidationError') {
+                    expect(err).to.exist();
+                    expect(err.name).to.equal('ValidationError');
+                    expect(err.message).to.equal('\"value\" must be an object');
+                    // console.log('error details: ' + JSON.stringify(err.details) );
+                    // console.log('error ' + JSON.stringify(err) + ' ' + JSON.stringify(result));
+                    return done();
+                }
+            });
+        };
+
+        createUser(Fixtures.users[2].username);
+
+    });
+
+    it('fail to create2 users', function (done) {
+
+        Fixtures.users[2].username = null;
+
+        var createUser = function (userdoc) {
+
+            User.create2(userdoc, function (err, result) {
 
                 Fixtures.users[2].username = 'user1ono';
 
@@ -378,8 +406,11 @@ describe('users', function () {
                 done(Sofa.stop());
             });
     });
+});
 
-    it('multiple authentications results in lockout ', function (done) {
+describe('multiple auth attempts and lockouts', function () {
+
+    before(function (done) {
 
         Async.waterfall([
             function (next) {
@@ -402,6 +433,7 @@ describe('users', function () {
 
                         ++counter;
 
+                        // console.log('counter' + counter + 'response' + err + JSON.stringify(response));
                         if (counter === 9) {
                             return next();
                         }
@@ -416,7 +448,26 @@ describe('users', function () {
 
                 attempt();
 
-            }, function (next) {
+            }], function (err) {
+
+                done(Sofa.stop());
+            });
+    });
+
+    it('multiple authentications results in lockout 2', function (done) {
+
+        Async.waterfall([
+            function (next) {
+
+                // make connection to db.
+
+                Sofa.connect(function (err, sessionid) {
+
+                    expect(sessionid).to.have.length(50);
+                    next();
+                });
+            },
+            function (next) {
 
                 // Ensure loginAttempts value is correct
                 // and lockUntil date is correct.
@@ -424,11 +475,13 @@ describe('users', function () {
                 User.findby('email', 'foo@hapiu.com', function (err, response) {
 
                     // Get uid for next test.
+                    // console.log('findby: ' + err + response);
 
                     internals.userid = response.id;
 
                     // Ensure user is locked out with appropriate values.
 
+                    // console.log('loginAttempts' + response.value.loginAttempts);
                     expect(response.value.loginAttempts).to.equal(11);
                     expect(response.value.email).to.equal('foo@hapiu.com');
                     expect(response.value.lockUntil).to.be.above(Date.now());
@@ -449,7 +502,26 @@ describe('users', function () {
                         }
                     });
                 });
-            }, function (next) {
+            }], function (err) {
+
+                done(Sofa.stop());
+            });
+    });
+
+    it('multiple authentications results in lockout 3', function (done) {
+
+        Async.waterfall([
+            function (next) {
+
+                // make connection to db.
+
+                Sofa.connect(function (err, sessionid) {
+
+                    expect(sessionid).to.have.length(50);
+                    next();
+                });
+            },
+            function (next) {
 
                  // Ensure lockUntil date is now expired.
 
@@ -484,6 +556,392 @@ describe('users', function () {
                     expect(response.value.loginAttempts).to.equal(1);
                     next();
                 });
+            }], function (err) {
+
+                done(Sofa.stop());
+            });
+    });
+
+    it('create2 user -- no duplicates and delete user logic', function (done) {
+
+        Async.waterfall([
+            function (next) {
+
+                // make connection to db.
+
+                Sofa.connect(function (err, sessionid) {
+
+                    expect(sessionid).to.have.length(50);
+                    next();
+                });
+            }, function (next) {
+
+                var mockuser = {
+                    'username': 'MockTwo',
+                    'first': 'MockTwo',
+                    'last': 'MockLastTwo',
+                    'pw': 'moo',
+                    // 'email': 'foo@hapiu.com', // exists
+                    'email': 'mock2@hapiu.com',
+                    'scope': ['user'],
+                    loginAttempts: 0,
+                    lockUntil: Date.now() - 60 * 1000
+                };
+
+                User.create2(mockuser, function (err, result) {
+
+                    if (err && err.name === 'ValidationError') {
+
+                        return next();
+
+                    } else if (err === 'Error: data and salt arguments required') {
+
+                        // bcrypt hash creation failed.
+
+                        return next();
+
+                    }
+
+                    // user successfully created
+
+                    // get ids for newly created document
+
+                    internals.mockuserid = result.result.id;
+                    internals.mockrevid = result.result.rev;
+
+                    expect(result.err).to.equal(null);
+                    expect(result.result.ok).to.equal(true);
+                    expect(result.result.id).to.have.length(32);
+                    expect(result.result.rev).to.include('1');
+
+                    return next();
+                });
+
+            }, function (next) {
+
+                // Destroy mockuser made in previous step
+
+                Sofa.deleteDocument(internals.mockuserid, internals.mockrevid, function (err, result) {
+
+                    // console.log('deleteDocument ' + err + ' ' + JSON.stringify(result));
+                    expect(result.ok).to.equal(true);
+                    expect(result.id).to.have.length(32);
+                    expect(result.rev).to.have.length(34);
+                    return next();
+                });
+
+            }], function (err) {
+
+                return done(Sofa.stop());
+            });
+    });
+
+
+    it('mock delete document failure', function (done) {
+
+        Async.waterfall([
+            function (next) {
+
+                // make connection to db.
+
+                Sofa.connect(function (err, sessionid) {
+
+                    expect(sessionid).to.have.length(50);
+                    next();
+                });
+            }, function (next) {
+
+                Sofa.deleteDocument(null, null, function (err, result) {
+
+                    Sofa.db.destroy = internals.mockdestroy;
+
+                    // console.log('deleteDocument ' + JSON.stringify(err) + ' ' + JSON.stringify(result));
+                    expect(err).to.exist();
+                    expect(err.message).to.equal('You tried to DELETE a database with a ?rev= parameter. Did you mean to DELETE a document instead?');
+
+                    return next();
+                });
+            }], function (err) {
+
+                done(Sofa.stop());
+            });
+    });
+
+    it('delete user logic no previous connection', function (done) {
+
+        Async.waterfall([
+            function (next) {
+
+                // make connection to db.
+
+                Sofa.connect(function (err, sessionid) {
+
+                    expect(sessionid).to.have.length(50);
+                    next();
+                });
+            }, function (next) {
+
+                var mockuser = {
+                    'username': 'MockTwo',
+                    'first': 'MockTwo',
+                    'last': 'MockLastTwo',
+                    'pw': 'moo',
+                    // 'email': 'foo@hapiu.com', // exists
+                    'email': 'mock2@hapiu.com',
+                    'scope': ['user'],
+                    loginAttempts: 0,
+                    lockUntil: Date.now() - 60 * 1000
+                };
+
+                User.create2(mockuser, function (err, result) {
+
+                    if (err && err.name === 'ValidationError') {
+
+                        return next();
+
+                    } else if (err === 'Error: data and salt arguments required') {
+
+                        // bcrypt hash creation failed.
+
+                        return next();
+
+                    }
+
+                    // user successfully created
+
+                    // get ids for newly created document
+
+                    internals.mockuserid = result.result.id;
+                    internals.mockrevid = result.result.rev;
+
+                    expect(result.err).to.equal(null);
+                    expect(result.result.ok).to.equal(true);
+                    expect(result.result.id).to.have.length(32);
+                    expect(result.result.rev).to.include('1');
+
+                    return next(Sofa.stop());
+                });
+
+            }, function (next) {
+
+                // Destroy mockuser made in previous step connection was deleted
+
+                Sofa.deleteDocument(internals.mockuserid, internals.mockrevid, function (err, result) {
+
+                    // console.log('deleteDocument ' + err + ' ' + JSON.stringify(result));
+                    expect(result.ok).to.equal(true);
+                    expect(result.id).to.have.length(32);
+                    expect(result.rev).to.have.length(34);
+                    return next();
+                });
+
+            }], function (err) {
+
+                return done(Sofa.stop());
+            });
+    });
+
+    it('mock delete document failure no previous connection', function (done) {
+
+        Async.waterfall([
+            function (next) {
+
+                Sofa.deleteDocument(null, null, function (err, result) {
+
+                    Sofa.db.destroy = internals.mockdestroy;
+
+                    // console.log('deleteDocument ' + JSON.stringify(err) + ' ' + JSON.stringify(result));
+                    expect(err).to.exist();
+                    expect(err.message).to.equal('You tried to DELETE a database with a ?rev= parameter. Did you mean to DELETE a document instead?');
+
+                    return next();
+                });
+            }], function (err) {
+
+                done(Sofa.stop());
+            });
+    });
+
+    it('create2 user email already exists coverage', function (done) {
+
+        Async.waterfall([
+            function (next) {
+
+                // make connection to db.
+
+                Sofa.connect(function (err, sessionid) {
+
+                    expect(sessionid).to.have.length(50);
+                    next();
+                });
+            }, function (next) {
+
+                var mockuser = {
+                    'username': 'MockTwo',
+                    'first': 'MockTwo',
+                    'last': 'MockLastTwo',
+                    'pw': 'moo',
+                    // 'email': 'foo@hapiu.com', // exists
+                    'email': 'foo@hapiu.com',
+                    'scope': ['user'],
+                    loginAttempts: 0,
+                    lockUntil: Date.now() - 60 * 1000
+                };
+
+                User.create2(mockuser, function (err, result) {
+
+                    if (err && err.name === 'ValidationError') {
+
+                        return next();
+
+                    } else if (err === 'Error: data and salt arguments required') {
+
+                        // bcrypt hash creation failed.
+
+                        return next();
+
+                    }
+
+                    // user successfully created
+
+                    // get ids for newly created document
+
+
+                    // console.log('duplicate user: ' + JSON.stringify(result));
+                    expect(result).to.exist();
+                    expect(result.message).to.equal('email already exists');
+
+                    return next();
+                });
+            }], function (err) {
+
+                return done(Sofa.stop());
+            });
+    });
+
+    it('create2 username already exists error message coverage', function (done) {
+
+        Async.waterfall([
+            function (next) {
+
+                // make connection to db.
+
+                Sofa.connect(function (err, sessionid) {
+
+                    expect(sessionid).to.have.length(50);
+                    next();
+                });
+            }, function (next) {
+
+                var mockuser = {
+                    'username': 'Mock',
+                    'first': 'MockTwo',
+                    'last': 'MockLastTwo',
+                    'pw': 'moo',
+                    // 'email': 'foo@hapiu.com', // exists
+                    'email': 'mock3@hapiu.com',
+                    'scope': ['user'],
+                    loginAttempts: 0,
+                    lockUntil: Date.now() - 60 * 1000
+                };
+
+                User.create2(mockuser, function (err, result) {
+
+                    if (err && err.name === 'ValidationError') {
+
+                        return next();
+                    } else if (err === 'Error: data and salt arguments required') {
+
+                        // bcrypt hash creation failed.
+
+                        return next();
+                    }
+
+                    // user successfully created
+
+                    // get ids for newly created document
+
+
+                    // console.log('duplicate username: ' + JSON.stringify(result));
+                    expect(result).to.exist();
+                    expect(result.message).to.equal('username already exists');
+
+                    return next();
+                });
+            }], function (err) {
+
+                return done(Sofa.stop());
+            });
+    });
+
+    it('mock userExists Sofa.view failure error ', function (done) {
+
+        Async.waterfall([
+            function (next) {
+
+                // make connection to db.
+
+                Sofa.connect(function (err, sessionid) {
+
+                    expect(sessionid).to.have.length(50);
+                    next();
+                });
+            }, function (next) {
+
+                internals.original = Sofa.view;
+
+                // create mock up
+
+                Sofa.view = function (users, list, options, callback) {
+
+                    Sofa.view = internals.original;
+                    return callback(new Error('mock Sofa.view failure'), null);
+                };
+
+                var mockuser = {
+                    'username': 'Mock',
+                    'first': 'Moo',
+                    'last': 'Mook',
+                    'pw': 'moo',
+                    'email': 'mock@hapiu.com',
+                    'scope': ['user'],
+                    loginAttempts: 0,
+                    lockUntil: Date.now() - 60 * 1000
+                };
+
+                User.create2(mockuser, function (err, result) {
+
+                    if (err && err.name === 'ValidationError') {
+
+                        return next();
+
+                    } else if (err === 'Error: data and salt arguments required') {
+
+                        // bcrypt hash creation failed.
+
+                        return next();
+
+                    } else if (err) {
+
+                        // console.log('view error: ' + JSON.stringify(err));
+
+                        expect(err).to.exist();
+                        expect(err.message).to.exist('mock Sofa.view failure');
+
+                        return next();
+                    }
+
+                    // user successfully created
+
+                    // get ids for newly created document
+
+                    // console.log('duplicate user: ' + JSON.stringify(result));
+                    // expect(result).to.exist();
+                    // expect(result.message).to.equal('email already exists');
+
+                    return next();
+                });
+
             }], function (err) {
 
                 done(Sofa.stop());

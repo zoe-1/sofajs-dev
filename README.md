@@ -38,7 +38,7 @@ creating or updating.
 [connect(callback)](#sofa-connect)<br/>
 [createdb()](#sofa-createdb)<br/>
 [current()](#sofa-current)<br/>
-[destroy()](#sofa-destroy)<br/>
+[destroydb()](#sofa-destroy)<br/>
 [insert(document, callback(err, response))](#sofa-insert)<br/>
 [insertBulk(\['array', 'Of', 'Documents'\], callback(err, response))](#sofa-insertBulk)<br/>
 [insertID(document, suppliedID, callback(err, response))](#sofa-insertID)<br/>
@@ -171,7 +171,7 @@ Sofa.createdb(function (err, response) {
 });
 ```
 
-#### <a name="sofa-destroy">destroy(callback(err, response))</a> 
+#### <a name="sofa-destroy">destroydb(callback(err, response))</a> 
 Destroy the database defined in configuration file.
 Useful when when wanting to re-create the DB and reload fresh fixture data. 
 ``` JavaScript
